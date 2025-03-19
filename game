@@ -5,114 +5,159 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Connect the Dots</title>
     <style>
-        body { text-align: center; font-family: Arial, sans-serif; }
-        canvas { border: 2px solid black; cursor: pointer; }
-        button { margin: 5px; padding: 10px; font-size: 16px; }
-        #nextLevelButton { display: none; }
+        body { 
+            text-align: center; 
+            font-family: Arial, sans-serif; 
+            background-color: #87CEEB; /* Light blue background */
+        }
+        canvas { 
+            border: 2px solid black; 
+            cursor: pointer; 
+            background-color: white;
+            display: none; 
+        }
+        button {
+            margin: 10px;
+            padding: 20px 40px;
+            font-size: 24px;
+            border-radius: 10px;
+            border: none;
+            background-color: #007BFF;
+            color: white;
+            cursor: pointer;
+        }
+        button:hover {
+            background-color: #0056b3;
+        }
+        #nextLevelButton, #gameContainer { display: none; }
+        
+        #homePage, #creditsPage, #gameContainer {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            height: 100vh;
+        }
     </style>
 </head>
 <body>
-    <h1>Connect the Dots Game</h1>
-    <canvas id="gameCanvas" width="500" height="500"></canvas>
-    <br>
-    <button onclick="startGame()">Start Game</button>
-    <button id="nextLevelButton" onclick="nextLevel()">Next Level</button>
-    <p>Level: <span id="levelDisplay">1</span>/10</p>
-    <audio id="bgMusic" loop>
-        <source src="background-music.mp3" type="audio/mp3">
-    </audio>
+    <div id="homePage">
+        <h1>Connect the Dots</h1>
+        <button onclick="showGame()">Play</button>
+        <button onclick="showCredits()">Credits</button>
+    </div>
+    
+    <div id="creditsPage" style="display: none;">
+        <h1>Credits</h1>
+        <p>Game developed by [Your Name]</p>
+        <button onclick="showHomePage()">Back</button>
+    </div>
+    
+    <div id="gameContainer">
+        <h1>Connect the Dots Game</h1>
+        <canvas id="gameCanvas" width="500" height="500"></canvas>
+        <br>
+        <button onclick="startGame()">Start Game</button>
+        <button id="nextLevelButton" onclick="nextLevel()" style="display: none;">Next Level</button>
+        <p>Level: <span id="levelDisplay">1</span>/10</p>
+        <button onclick="showHomePage()">Home</button>
+        <audio id="bgMusic" loop>
+            <source src="background-music.mp3" type="audio/mp3">
+            Your browser does not support the audio element.
+        </audio>
+    </div>
     
     <script>
-        const canvas = document.getElementById("gameCanvas");
-        const ctx = canvas.getContext("2d");
-        const music = document.getElementById("bgMusic");
-        const levelDisplay = document.getElementById("levelDisplay");
-        const nextLevelButton = document.getElementById("nextLevelButton");
+        let canvas = document.getElementById("gameCanvas");
+        let ctx = canvas.getContext("2d");
+        let dots = [];
+        let currentDot = 0;
+        let level = 1;
+        let maxLevels = 10;
+
+        function showGame() {
+            document.getElementById("homePage").style.display = "none";
+            document.getElementById("gameContainer").style.display = "flex";
+            document.getElementById("gameCanvas").style.display = "block";
+            startGame();
+        }
         
-        let levels = [
-            [ { x: 50, y: 50 }, { x: 150, y: 100 }, { x: 250, y: 50 }, { x: 350, y: 100 }, { x: 450, y: 50 }, { x: 250, y: 200 } ],
-            [ { x: 80, y: 80 }, { x: 180, y: 120 }, { x: 280, y: 80 }, { x: 380, y: 120 }, { x: 480, y: 80 }, { x: 250, y: 250 } ],
-            [ { x: 60, y: 100 }, { x: 160, y: 150 }, { x: 260, y: 100 }, { x: 360, y: 150 }, { x: 460, y: 100 }, { x: 250, y: 300 } ],
-            [ { x: 50, y: 200 }, { x: 150, y: 250 }, { x: 250, y: 200 }, { x: 350, y: 250 }, { x: 450, y: 200 }, { x: 250, y: 350 } ],
-            [ { x: 70, y: 70 }, { x: 170, y: 170 }, { x: 270, y: 70 }, { x: 370, y: 170 }, { x: 470, y: 70 }, { x: 250, y: 400 } ],
-            [ { x: 100, y: 50 }, { x: 200, y: 150 }, { x: 300, y: 50 }, { x: 400, y: 150 }, { x: 500, y: 50 }, { x: 250, y: 450 } ],
-            [ { x: 50, y: 50 }, { x: 450, y: 50 }, { x: 250, y: 150 }, { x: 50, y: 250 }, { x: 450, y: 250 }, { x: 250, y: 350 } ],
-            [ { x: 50, y: 450 }, { x: 150, y: 350 }, { x: 250, y: 450 }, { x: 350, y: 350 }, { x: 450, y: 450 }, { x: 250, y: 250 } ],
-            [ { x: 50, y: 250 }, { x: 150, y: 350 }, { x: 250, y: 250 }, { x: 350, y: 350 }, { x: 450, y: 250 }, { x: 250, y: 150 } ],
-            [ { x: 250, y: 50 }, { x: 50, y: 150 }, { x: 450, y: 150 }, { x: 150, y: 250 }, { x: 350, y: 250 }, { x: 250, y: 350 } ]
-        ];
+        function showCredits() {
+            document.getElementById("homePage").style.display = "none";
+            document.getElementById("creditsPage").style.display = "flex";
+        }
         
-        let currentLevel = 0;
-        let dots = levels[currentLevel];
-        let connectedDots = [];
-        
+        function showHomePage() {
+            document.getElementById("gameContainer").style.display = "none";
+            document.getElementById("creditsPage").style.display = "none";
+            document.getElementById("homePage").style.display = "flex";
+        }
+
+        function startGame() {
+            dots = [];
+            currentDot = 0;
+            generateDots(level + 3);
+            drawDots();
+            document.getElementById("nextLevelButton").style.display = "none";
+            document.getElementById("levelDisplay").innerText = level;
+        }
+
+        function generateDots(count) {
+            for (let i = 0; i < count; i++) {
+                let x = Math.floor(Math.random() * 450) + 25;
+                let y = Math.floor(Math.random() * 450) + 25;
+                dots.push({ x, y });
+            }
+        }
+
         function drawDots() {
             ctx.clearRect(0, 0, canvas.width, canvas.height);
             ctx.fillStyle = "black";
             ctx.font = "16px Arial";
-            dots.forEach((dot, index) => {
+
+            for (let i = 0; i < dots.length; i++) {
                 ctx.beginPath();
-                ctx.arc(dot.x, dot.y, 6, 0, Math.PI * 2);
+                ctx.arc(dots[i].x, dots[i].y, 8, 0, Math.PI * 2);
                 ctx.fill();
-                ctx.fillText(index + 1, dot.x + 10, dot.y);
-            });
+                ctx.fillText(i + 1, dots[i].x + 10, dots[i].y + 5);
+            }
         }
-        
-        function connectLines() {
-            ctx.strokeStyle = "blue";
-            ctx.lineWidth = 2;
-            ctx.beginPath();
-            connectedDots.forEach((dot, index) => {
-                if (index === 0) {
-                    ctx.moveTo(dot.x, dot.y);
-                } else {
-                    ctx.lineTo(dot.x, dot.y);
-                }
-            });
-            ctx.stroke();
-        }
-        
-        canvas.addEventListener("click", function(event) {
-            const rect = canvas.getBoundingClientRect();
-            const clickX = event.clientX - rect.left;
-            const clickY = event.clientY - rect.top;
-            dots.forEach((dot, index) => {
-                if (
-                    Math.abs(clickX - dot.x) < 10 &&
-                    Math.abs(clickY - dot.y) < 10 &&
-                    !connectedDots.includes(dot)
-                ) {
-                    connectedDots.push(dot);
-                    drawDots();
-                    connectLines();
-                    if (connectedDots.length === dots.length) {
-                        alert("Level Completed!");
-                        nextLevelButton.style.display = "block";
+
+        canvas.addEventListener("click", function (event) {
+            let rect = canvas.getBoundingClientRect();
+            let mouseX = event.clientX - rect.left;
+            let mouseY = event.clientY - rect.top;
+
+            if (currentDot < dots.length) {
+                let dot = dots[currentDot];
+                let distance = Math.sqrt(
+                    Math.pow(mouseX - dot.x, 2) + Math.pow(mouseY - dot.y, 2)
+                );
+                if (distance < 10) {
+                    if (currentDot > 0) {
+                        ctx.beginPath();
+                        ctx.moveTo(dots[currentDot - 1].x, dots[currentDot - 1].y);
+                        ctx.lineTo(dot.x, dot.y);
+                        ctx.strokeStyle = "blue";
+                        ctx.lineWidth = 3;
+                        ctx.stroke();
+                    }
+                    currentDot++;
+                    if (currentDot === dots.length) {
+                        document.getElementById("nextLevelButton").style.display = "block";
                     }
                 }
-            });
+            }
         });
-        
-        function startGame() {
-            currentLevel = 0;
-            levelDisplay.innerText = currentLevel + 1;
-            connectedDots = [];
-            dots = levels[currentLevel];
-            music.play();
-            drawDots();
-            nextLevelButton.style.display = "none";
-        }
-        
+
         function nextLevel() {
-            currentLevel++;
-            levelDisplay.innerText = currentLevel + 1;
-            connectedDots = [];
-            dots = levels[currentLevel];
-            drawDots();
-            nextLevelButton.style.display = "none";
+            if (level < maxLevels) {
+                level++;
+                startGame();
+            } else {
+                alert("Congratulations! You completed all levels.");
+            }
         }
-        
-        drawDots();
     </script>
 </body>
 </html>
